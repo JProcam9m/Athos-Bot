@@ -20,8 +20,9 @@ BOT_TOKEN = os.getenv('BOT_TOKEN')
 print(BOT_TOKEN)
 
 # --- IDs DE CONFIGURAÇÃO ---
-ID_CARGO_AUTOMATICO = 1463870206962040985 
+ID_CARGO_AUTOMATICO = 1477300386648952843 
 ID_MENSAGEM_REACAO = 1464349593511657555
+ID_CANAL_BEM_VINDO = 1477081480382386331
 
 # Dicionário de Mapeamento dos id's
 CARGOS_POR_EMOJI = {
@@ -60,14 +61,44 @@ async def on_message(message):
         return
     await bot.process_commands(message)
 
+
+
+
 @bot.event
 async def on_member_join(member):
+    # --- Cargo Automático ---
     role = member.guild.get_role(ID_CARGO_AUTOMATICO)
     if role:
         try:
             await member.add_roles(role)
         except discord.Forbidden:
-            print("Erro: Verifique a hierarquia de cargos para o cargo automático.")
+            print(f"Erro: Sem permissão para dar cargo a {member.name}")
+
+    # --- Embed de Boas-Vindas ---
+    channel = member.guild.get_channel(ID_CANAL_BEM_VINDO)
+    if channel:
+        embed = discord.Embed(
+            title="✨ Novo Membro no Servidor!",
+            description=(
+                f"Seja muito bem-vindo(a), {member.mention}!\n\n"
+                f"> **━━━━━━━━━━ ✧ ━━━━━━━━━━**\n\n"
+                f"📜 **Leia as nossas regras:**\n"
+                f" | Para manter a boa convivência, dê uma passada em <#1463882479499739350>.\n\n"
+                f"> **━━━━━━━━━━ ✧ ━━━━━━━━━━**"
+            ),
+            color=0x3498db 
+        )
+
+        embed.set_thumbnail(url=member.display_avatar.url)
+        
+        # embed.set_image(url="https://i.imgur.com/vHqY7Zp.png") 
+
+        embed.add_field(name="🔢 Membro nº", value=f"**{len(member.guild.members)}**", inline=True)
+        embed.add_field(name="📅 Conta criada em", value=member.created_at.strftime("%d/%m/%Y"), inline=True)
+        
+        embed.set_footer(text=f"ID do usuário: {member.id} • Athos Bot")
+        
+        await channel.send(f"Boas-vindas {member.mention}!", embed=embed)
 
 @bot.event
 async def on_raw_reaction_add(payload):
@@ -150,10 +181,81 @@ async def setup_registro(ctx):
             
     print(f"ID DA MENSAGEM PARA CONFIGURAR: {msg.id}")
 
-# COMANDOS
+
+
+
+class EmbedModal(discord.ui.Modal, title='Gerador de Mensagem Embed'):
+    # Campos do formulário
+    titulo = discord.ui.TextInput(
+        label='Título da Embed',
+        placeholder='Insira o título principal aqui...',
+        required=True
+    )
+    
+    descricao = discord.ui.TextInput(
+        label='Descrição/Corpo do Texto',
+        style=discord.TextStyle.paragraph,
+        placeholder='O que você deseja anunciar?',
+        required=True,
+        max_length=2000
+    )
+    
+    cor_hex = discord.ui.TextInput(
+        label='Cor em Hexadecimal (opcional)',
+        placeholder='Ex: #3498db',
+        default='#3498db',
+        required=False
+    )
+    
+    imagem_url = discord.ui.TextInput(
+        label='URL da Imagem (opcional)',
+        placeholder='Cole o link de uma imagem (ex: imgur)',
+        required=False
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        # Lógica para converter a cor
+        try:
+            color_hex = self.cor_hex.value.replace('#', '')
+            cor = discord.Color(int(color_hex, 16))
+        except ValueError:
+            cor = discord.Color.blue()
+
+        # Criando a Embed
+        embed = discord.Embed(
+            title=self.titulo.value,
+            description=self.descricao.value,
+            color=cor
+        )
+        
+        # Se o usuário colou um link de imagem, adiciona à embed
+        if self.imagem_url.value:
+            if self.imagem_url.value.startswith(("http://", "https://")):
+                embed.set_image(url=self.imagem_url.value)
+
+        embed.set_footer(text=f"Enviado por {interaction.user.display_name} • Athos Bot", icon_url=interaction.user.display_avatar.url)
+
+        # Envia a embed no canal onde o comando foi usado
+        await interaction.channel.send(embed=embed)
+        # Responde apenas para quem usou o comando que deu certo
+        await interaction.response.send_message("✅ Embed enviada com sucesso!", ephemeral=True)
+
+class EmbedControl(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None) # Faz aquele botão não expirar
+
+    @discord.ui.button(label="Abrir Editor de Embed", style=discord.ButtonStyle.success, emoji="📝")
+    async def abrir_modal(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Quando o botão é clicado, ele abre o modal que já foi criado
+        await interaction.response.send_modal(EmbedModal())
+# COMANDOS 
+
+
+
 
 @bot.command()
 async def ola(ctx): await ctx.reply(f'Olá, {ctx.author.mention}')
+
 
 @bot.command()
 async def oi(ctx): await ctx.reply(f'Oi, tudo bem? {ctx.author.mention}')
@@ -177,8 +279,8 @@ async def comandos(ctx):
     )
     
     embed.add_field(name="💬 Interação", value="`ola`, `oi`, `teste`, `suave`, `ajuda`.", inline=False)
-    embed.add_field(name="🛠️ Utilidades", value="`comandos`, `avatar`, `banner`.", inline=False)
-    embed.add_field(name="🛡️ Moderação", value="`clear`, `lock`, `unlock`.", inline=False)
+    embed.add_field(name="🛠️ Utilidades", value="`comandos`, `avatar`, `banner`, `ping`.", inline=False)
+    embed.add_field(name="🛡️ Moderação", value="`clear`, `lock`, `unlock`, `criar_embed`.", inline=False)
     
     embed.set_footer(text=f"Solicitado por {ctx.author.name}", icon_url=ctx.author.display_avatar.url)
     
@@ -187,9 +289,32 @@ async def comandos(ctx):
 @bot.command()
 async def avatar(ctx, user: typing.Optional[discord.User] = None):
     user = user or ctx.author
-    embed = discord.Embed(title=f"Avatar de {user.name}", color=user.color)
+    
+    embed = discord.Embed(
+        description=f"📸 Avatar de {user.mention}", 
+        color=user.color
+    )
     embed.set_image(url=user.display_avatar.url)
+    
     await ctx.reply(embed=embed)
+
+@bot.command()
+async def banner(ctx, user: typing.Optional[discord.User] = None):
+    user = user or ctx.author
+    
+    # fetch user utilizado para api pegar realmente o banner.
+    user = await bot.fetch_user(user.id)
+
+    if user.banner:
+        embed = discord.Embed(
+            description=f"✨ Banner de {user.mention}", 
+            color=user.color if user.color else 0x3498db
+        )
+        embed.set_image(url=user.banner.url)
+        await ctx.reply(embed=embed)
+    else:
+        await ctx.reply(f"❌ O usuário {user.mention} não possui um banner definido.")
+
 
 @bot.command()
 @commands.has_permissions(manage_channels=True)
@@ -208,6 +333,21 @@ async def unlock(ctx):
 async def clear(ctx, amount: int):
     await ctx.channel.purge(limit=amount + 1)
     await ctx.send(f"🧹 Mensagens apagadas!", delete_after=5)
+    
+@bot.command()
+async def ping(ctx):
+    latency_ms = round(bot.latency * 1000)
+    await ctx.send(f'Pong! Latência do Bot: **{latency_ms}ms**')
+    
+@bot.command(name="criar_embed")
+@commands.has_permissions(administrator=True)
+async def criar_embed_prefix(ctx):
+    embed_aviso = discord.Embed(
+        description="Clique no botão abaixo para configurar sua mensagem personalizada.",
+        color=discord.Color.blue()
+    )
+    # Envia a mensagem com o botão
+    await ctx.send(embed=embed_aviso, view=EmbedControl())
     
 
 # Token do meu bot
