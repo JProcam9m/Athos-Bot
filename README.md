@@ -1,7 +1,6 @@
 # 🤖 Athos Bot
 
 [![Python Version](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
-[![Discord.py](https://img.shields.io/badge/library-discord.py-2.0+-blue)](https://discordpy.readthedocs.io/en/stable/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 O **Athos Bot** é um assistente multifuncional para Discord, focado em automação, moderação e experiência do usuário. Desenvolvido em Python, ele combina comandos clássicos de prefixo com as tecnologias mais recentes do Discord, como **Modais (formulários)** e **Interações por Botões**.
@@ -18,7 +17,11 @@ O **Athos Bot** é um assistente multifuncional para Discord, focado em automaç
 
 ---
 ## 📋 Registro de Linguagens de Programação
+
 ![alt text](screenshots/registro.png) 
+
+## 📋 Mensagem em estilo Embed de Boas Vindas
+![alt text](screenshots/boasvindas.png) 
 
 ## 🚀 Tecnologias Utilizadas
 
@@ -48,6 +51,15 @@ O **Athos Bot** é um assistente multifuncional para Discord, focado em automaç
 | `!ping` | Verifica a latência de conexão do bot | Livre |
 | `!comandos` | Lista a central de ajuda organizada | Livre |
 | `!ola` / `!suave` | Comandos de interação rápida | Livre |
+
+
+## ✨ Criar Mensagens em Embed Style
+
+![alt text](screenshots/criarembed.png)
+
+## ✨ Mensagem em Style Embed de Exemplo
+
+![alt text](screenshots/embedcriada.png) 
 
 ---
 
